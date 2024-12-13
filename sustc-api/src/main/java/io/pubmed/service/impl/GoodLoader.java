@@ -252,8 +252,8 @@ public class GoodLoader {
         fileName = "D:\\study\\2024F\\SA\\Database\\cs201_project2_import\\src\\main\\java\\org\\example\\pubmed24n.ndjson";
         Properties properties = new Properties();
         properties.put("host", "localhost");
-        properties.put("user", "zzh");
-        properties.put("password", "2580");
+        properties.put("user", "postgres");
+        properties.put("password", "123456");
         properties.put("database", "postgres");
         Properties prop = new Properties(properties);
         try (BufferedReader infile

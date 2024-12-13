@@ -59,7 +59,6 @@ public class DatabaseServiceImpl implements DatabaseService {
     public void truncate() {
         // You can use the default truncate script provided by us in most cases,
         // but if it doesn't work properly, you may need to modify it.
-
         String sql = "DO $$\n" +
                 "DECLARE\n" +
                 "    tables CURSOR FOR\n" +

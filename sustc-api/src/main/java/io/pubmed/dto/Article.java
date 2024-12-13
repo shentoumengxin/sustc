@@ -69,6 +69,4 @@ public class Article implements Serializable {
      * pub_model of this article.
      */
     private String pub_model;
-
-
 }
