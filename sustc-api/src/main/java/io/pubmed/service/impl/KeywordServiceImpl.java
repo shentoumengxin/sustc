@@ -35,8 +35,7 @@ public class KeywordServiceImpl implements KeywordService {
                 "FROM Article a " +
                 "JOIN Article_Keywords ak ON a.id = ak.article_id " +
                 "JOIN Keywords k ON ak.keyword_id = k.id " +
-                "WHERE k.keyword = ? " +
-                "AND a.date_completed >= CURRENT_DATE - INTERVAL '1 year' " +
+                "WHERE k.keyword = ? "  +
                 "GROUP BY year " +
                 "ORDER BY year DESC";
 
