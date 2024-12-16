@@ -249,7 +249,7 @@ public class GoodLoader {
 
     public static void main(String[] args) {
         String fileName;
-        fileName = "D:\\study\\2024F\\SA\\Database\\cs201_project2_import\\src\\main\\java\\org\\example\\pubmed24n.ndjson";
+        fileName = "D:\\Edge浏览器下载\\Project2\\json\\pubmed24n.ndjson";
         Properties properties = new Properties();
         properties.put("host", "localhost");
         properties.put("user", "postgres");
