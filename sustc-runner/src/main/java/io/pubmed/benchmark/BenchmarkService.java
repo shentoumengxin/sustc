@@ -1,9 +1,11 @@
 package io.pubmed.benchmark;
 
 import io.fury.ThreadSafeFury;
-import io.pubmed.dto.Article;
-import io.pubmed.dto.Author;
-import io.pubmed.dto.Journal;
+import io.pubmed.benchmark.BenchmarkConfig;
+import io.pubmed.benchmark.BenchmarkConstants;
+import io.pubmed.benchmark.BenchmarkResult;
+import io.pubmed.benchmark.BenchmarkStep;
+import io.pubmed.dto.*;
 import io.pubmed.service.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -53,10 +55,10 @@ public class BenchmarkService {
     private final Set<Long> registeredUser = new ConcurrentSkipListSet<>();
 
 
-    @io.pubmed.benchmark.BenchmarkStep(order = 1, timeout = 35, description = "Test getArticleCitationsByYear(int, int)")
+    @BenchmarkStep(order = 1, timeout = 35, description = "Test getArticleCitationsByYear(int, int)")
     public BenchmarkResult getArticleCitationsByYear() {
 
-        List<Map.Entry<Object[], Integer>> cases = deserialize(io.pubmed.benchmark.BenchmarkConstants.TEST_DATA, io.pubmed.benchmark.BenchmarkConstants.getArticleCitationsByYear);
+        List<Map.Entry<Object[], Integer>> cases = deserialize(BenchmarkConstants.TEST_DATA, BenchmarkConstants.getArticleCitationsByYear);
         val pass = new AtomicLong();
 
         val startTime = System.currentTimeMillis();
@@ -75,13 +77,13 @@ public class BenchmarkService {
         });
         val endTime = System.currentTimeMillis();
 
-        return new io.pubmed.benchmark.BenchmarkResult(pass, endTime - startTime);
+        return new BenchmarkResult(pass, endTime - startTime);
     }
 
-    @io.pubmed.benchmark.BenchmarkStep(order = 2, timeout = 35, description = "Test addArticleAndUpdateIF(Article)")
+    @BenchmarkStep(order = 2, timeout = 35, description = "Test addArticleAndUpdateIF(Article)")
     public BenchmarkResult addArticleAndUpdateIF() {
 
-        List<Map.Entry<Object[], Double>> cases = deserialize(io.pubmed.benchmark.BenchmarkConstants.TEST_DATA, io.pubmed.benchmark.BenchmarkConstants.addArticleAndUpdateIF);
+        List<Map.Entry<Object[], Double>> cases = deserialize(BenchmarkConstants.TEST_DATA, BenchmarkConstants.addArticleAndUpdateIF);
         val pass = new AtomicLong();
 
         val startTime = System.currentTimeMillis();
@@ -100,13 +102,13 @@ public class BenchmarkService {
         });
         val endTime = System.currentTimeMillis();
 
-        return new io.pubmed.benchmark.BenchmarkResult(pass, endTime - startTime);
+        return new BenchmarkResult(pass, endTime - startTime);
     }
 
-    @io.pubmed.benchmark.BenchmarkStep(order = 3, timeout = 35, description = "Test getArticlesByAuthorSortedByCitations(Author)")
+    @BenchmarkStep(order = 3, timeout = 35, description = "Test getArticlesByAuthorSortedByCitations(Author)")
     public BenchmarkResult getArticlesByAuthorSortedByCitations() {
 
-        List<Map.Entry<Object[], int[]>> cases = deserialize(io.pubmed.benchmark.BenchmarkConstants.TEST_DATA, io.pubmed.benchmark.BenchmarkConstants.getArticlesByAuthorSortedByCitations);
+        List<Map.Entry<Object[], int[]>> cases = deserialize(BenchmarkConstants.TEST_DATA, BenchmarkConstants.getArticlesByAuthorSortedByCitations);
         val pass = new AtomicLong();
 
         val startTime = System.currentTimeMillis();
@@ -125,13 +127,13 @@ public class BenchmarkService {
         });
         val endTime = System.currentTimeMillis();
 
-        return new io.pubmed.benchmark.BenchmarkResult(pass, endTime - startTime);
+        return new BenchmarkResult(pass, endTime - startTime);
     }
 
-    @io.pubmed.benchmark.BenchmarkStep(order = 4, timeout = 35, description = "Test getJournalWithMostArticlesByAuthor(Author)")
+    @BenchmarkStep(order = 4, timeout = 35, description = "Test getJournalWithMostArticlesByAuthor(Author)")
     public BenchmarkResult getJournalWithMostArticlesByAuthor() {
 
-        List<Map.Entry<Object[], String>> cases = deserialize(io.pubmed.benchmark.BenchmarkConstants.TEST_DATA, io.pubmed.benchmark.BenchmarkConstants.getJournalWithMostArticlesByAuthor);
+        List<Map.Entry<Object[], String>> cases = deserialize(BenchmarkConstants.TEST_DATA, BenchmarkConstants.getJournalWithMostArticlesByAuthor);
         val pass = new AtomicLong();
 
         val startTime = System.currentTimeMillis();
@@ -150,7 +152,7 @@ public class BenchmarkService {
         });
         val endTime = System.currentTimeMillis();
 
-        return new io.pubmed.benchmark.BenchmarkResult(pass, endTime - startTime);
+        return new BenchmarkResult(pass, endTime - startTime);
     }
 //    if you want test this bonus task, please uncomment the following code
 //    @io.pubmed.benchmark.BenchmarkStep(order = 5, timeout = 35, description = "Test getMinArticlesToLinkAuthors(Author, Author)")
@@ -179,10 +181,10 @@ public class BenchmarkService {
 //    }
 
 
-    @io.pubmed.benchmark.BenchmarkStep(order = 6, timeout = 35, description = "Test getCountryFundPapers(String)")
+    @BenchmarkStep(order = 6, timeout = 35, description = "Test getCountryFundPapers(String)")
     public BenchmarkResult getCountryFundPapers() {
 
-        List<Map.Entry<Object[], int[]>> cases = deserialize(io.pubmed.benchmark.BenchmarkConstants.TEST_DATA, io.pubmed.benchmark.BenchmarkConstants.getCountryFundPapers);
+        List<Map.Entry<Object[], int[]>> cases = deserialize(BenchmarkConstants.TEST_DATA, BenchmarkConstants.getCountryFundPapers);
         val pass = new AtomicLong();
 
         val startTime = System.currentTimeMillis();
@@ -201,13 +203,13 @@ public class BenchmarkService {
         });
         val endTime = System.currentTimeMillis();
 
-        return new io.pubmed.benchmark.BenchmarkResult(pass, endTime - startTime);
+        return new BenchmarkResult(pass, endTime - startTime);
     }
 
-    @io.pubmed.benchmark.BenchmarkStep(order = 7, timeout = 35, description = "Test getImpactFactor(String, int)")
+    @BenchmarkStep(order = 7, timeout = 35, description = "Test getImpactFactor(String, int)")
     public BenchmarkResult getImpactFactor() {
 
-        List<Map.Entry<Object[], Double>> cases = deserialize(io.pubmed.benchmark.BenchmarkConstants.TEST_DATA, io.pubmed.benchmark.BenchmarkConstants.getImpactFactor);
+        List<Map.Entry<Object[], Double>> cases = deserialize(BenchmarkConstants.TEST_DATA, BenchmarkConstants.getImpactFactor);
         val pass = new AtomicLong();
 
         val startTime = System.currentTimeMillis();
@@ -226,13 +228,13 @@ public class BenchmarkService {
         });
         val endTime = System.currentTimeMillis();
 
-        return new io.pubmed.benchmark.BenchmarkResult(pass, endTime - startTime);
+        return new BenchmarkResult(pass, endTime - startTime);
     }
 
-    @io.pubmed.benchmark.BenchmarkStep(order = 8, timeout = 35, description = "Test updateJournalName(String, int, String)")
+    @BenchmarkStep(order = 8, timeout = 35, description = "Test updateJournalName(String, int, String)")
     public BenchmarkResult updateJournalName() {
 
-        List<Map.Entry<Object[], Boolean>> cases = deserialize(io.pubmed.benchmark.BenchmarkConstants.TEST_DATA, io.pubmed.benchmark.BenchmarkConstants.updateJournalName);
+        List<Map.Entry<Object[], Boolean>> cases = deserialize(BenchmarkConstants.TEST_DATA, BenchmarkConstants.updateJournalName);
         val pass = new AtomicLong();
 
         val startTime = System.currentTimeMillis();
@@ -251,13 +253,13 @@ public class BenchmarkService {
         });
         val endTime = System.currentTimeMillis();
 
-        return new io.pubmed.benchmark.BenchmarkResult(pass, endTime - startTime);
+        return new BenchmarkResult(pass, endTime - startTime);
     }
 
-    @io.pubmed.benchmark.BenchmarkStep(order = 9, timeout = 35, description = "Test getArticleCountByKeywordInPastYears(String, int, String)")
+    @BenchmarkStep(order = 9, timeout = 35, description = "Test getArticleCountByKeywordInPastYears(String, int, String)")
     public BenchmarkResult getArticleCountByKeywordInPastYears() {
 
-        List<Map.Entry<Object[], int[]>> cases = deserialize(io.pubmed.benchmark.BenchmarkConstants.TEST_DATA, io.pubmed.benchmark.BenchmarkConstants.getArticleCountByKeywordInPastYears);
+        List<Map.Entry<Object[], int[]>> cases = deserialize(BenchmarkConstants.TEST_DATA, BenchmarkConstants.getArticleCountByKeywordInPastYears);
         val pass = new AtomicLong();
 
         val startTime = System.currentTimeMillis();
@@ -265,7 +267,7 @@ public class BenchmarkService {
             try {
                 val args = it.getKey();
                 val res = keywordService.getArticleCountByKeywordInPastYears((String)args[0]);
-                if (ArraysEqual(it.getValue() , res)) { //TODO: check the return value
+                if (ArraysEqual(it.getValue() , res)) {
                     pass.incrementAndGet();
                 } else {
                     log.info("Wrong answer for {}: expected {}, got {}", it.getKey(), it.getValue(), res);
@@ -276,7 +278,7 @@ public class BenchmarkService {
         });
         val endTime = System.currentTimeMillis();
 
-        return new io.pubmed.benchmark.BenchmarkResult(pass, endTime - startTime);
+        return new BenchmarkResult(pass, endTime - startTime);
     }
 
     @SneakyThrows

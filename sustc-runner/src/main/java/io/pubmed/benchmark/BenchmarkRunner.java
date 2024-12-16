@@ -38,7 +38,7 @@ public class BenchmarkRunner implements ShellApplicationRunner {
     private DatabaseService databaseService;
 
     @Autowired
-    private io.pubmed.benchmark.BenchmarkService benchmarkService;
+    private BenchmarkService benchmarkService;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -61,21 +61,21 @@ public class BenchmarkRunner implements ShellApplicationRunner {
 
         Arrays.stream(BenchmarkService.class.getMethods())
                 .sequential()
-                .filter(method -> method.isAnnotationPresent(io.pubmed.benchmark.BenchmarkStep.class))
-                .sorted(Comparator.comparingInt(m -> m.getAnnotation(io.pubmed.benchmark.BenchmarkStep.class).order()))
+                .filter(method -> method.isAnnotationPresent(BenchmarkStep.class))
+                .sorted(Comparator.comparingInt(m -> m.getAnnotation(BenchmarkStep.class).order()))
                 .peek(method -> log.info("Step {}: {}",
-                        method.getAnnotation(io.pubmed.benchmark.BenchmarkStep.class).order(),
+                        method.getAnnotation(BenchmarkStep.class).order(),
                         StringUtils.defaultIfEmpty(
-                                method.getAnnotation(io.pubmed.benchmark.BenchmarkStep.class).description(),
+                                method.getAnnotation(BenchmarkStep.class).description(),
                                 method.getName()
                         )
                 ))
                 .map(method -> {
                     val future = executor.submit(() -> (BenchmarkResult) method.invoke(benchmarkService));
                     try {
-                        val res = future.get(method.getAnnotation(io.pubmed.benchmark.BenchmarkStep.class).timeout(), TimeUnit.MINUTES);
+                        val res = future.get(method.getAnnotation(BenchmarkStep.class).timeout(), TimeUnit.MINUTES);
                         if (Objects.nonNull(res)) {
-                            res.setId(method.getAnnotation(io.pubmed.benchmark.BenchmarkStep.class).order());
+                            res.setId(method.getAnnotation(BenchmarkStep.class).order());
                         }
                         return res;
                     } catch (TimeoutException e) {

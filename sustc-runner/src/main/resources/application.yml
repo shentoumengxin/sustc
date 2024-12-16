@@ -1,8 +1,9 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/postgres  # change this to your own jdbc url
-    username: zzh  # change this to your own username (avoid using a superuser)
-    password: 2580  # change this to your own password
+    # TODO: change the following to your own database configuration
+    url:   jdbc:postgresql://localhost:5432/sustec
+    username:   zzh
+    password:   2580
 
     hikari:
       connection-timeout: 180000

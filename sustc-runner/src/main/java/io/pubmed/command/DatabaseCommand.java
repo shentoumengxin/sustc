@@ -99,23 +99,24 @@ public class DatabaseCommand {
             Map.Entry<Object[], Integer> entry = new AbstractMap.SimpleEntry<>(args, res);
             list1.add(entry);
         }
-        serialize(list1, io.pubmed.benchmark.BenchmarkConstants.TEST_DATA, io.pubmed.benchmark.BenchmarkConstants.getArticleCitationsByYear);
+        serialize(list1, BenchmarkConstants.TEST_DATA, BenchmarkConstants.getArticleCitationsByYear);
 
         log.info("gen for :  articleService.addArticleAndUpdateIF");
         List<Map.Entry<Object[], Double>> list2 = new ArrayList<>();
         List<Object[]> input2 = new ArrayList<>();
         Article article1 = new Article();
-        article1.setId(1);
+        article1.setId(9999999);
         article1.setTitle("Mechanisms of G protein-coupled receptor signaling in drug development");
         article1.setPub_model("Print");
         Journal journal = new Journal();
         journal.setTitle("Molecular pharmacology");
+        journal.setId("0035623");
         article1.setJournal(journal);
         DateFormat dateFormat1 = new SimpleDateFormat("yyyy-MM-dd");
-        Date dateCreated = dateFormat1.parse("2023-01-18");
+        Date dateCreated = dateFormat1.parse("2022-01-18");
         java.sql.Date sqlDate1 = new java.sql.Date(dateCreated.getTime());
         article1.setCreated(sqlDate1);
-        Date dateCompeleted = dateFormat1.parse("2023-12-18");
+        Date dateCompeleted = dateFormat1.parse("2022-12-18");
         java.sql.Date sqlDate2 = new java.sql.Date(dateCompeleted.getTime());
         article1.setCompleted(sqlDate2);
         input2.add(new Object[]{article1});
@@ -126,7 +127,7 @@ public class DatabaseCommand {
             Map.Entry<Object[], Double> entry = new AbstractMap.SimpleEntry<>(args, res);
             list2.add(entry);
         }
-        serialize(list2, io.pubmed.benchmark.BenchmarkConstants.TEST_DATA, io.pubmed.benchmark.BenchmarkConstants.addArticleAndUpdateIF);
+        serialize(list2, BenchmarkConstants.TEST_DATA, BenchmarkConstants.addArticleAndUpdateIF);
 //
         //---------------------------------------------------------------------GrantService---------------------------------------------------------------------
         log.info("gen for :  grantService.getCountryFundPapers");
@@ -143,7 +144,7 @@ public class DatabaseCommand {
             list3.add(entry);
         }
 
-        serialize(list3, io.pubmed.benchmark.BenchmarkConstants.TEST_DATA, io.pubmed.benchmark.BenchmarkConstants.getCountryFundPapers);
+        serialize(list3, BenchmarkConstants.TEST_DATA, BenchmarkConstants.getCountryFundPapers);
 
         //---------------------------------------------------------------------AuthorService---------------------------------------------------------------------
         log.info("gen for :  authorService.getArticlesByAuthorSortedByCitations");
@@ -165,7 +166,7 @@ public class DatabaseCommand {
 
             list4.add(entry);
         }
-        serialize(list4, io.pubmed.benchmark.BenchmarkConstants.TEST_DATA, BenchmarkConstants.getArticlesByAuthorSortedByCitations);
+        serialize(list4, BenchmarkConstants.TEST_DATA, BenchmarkConstants.getArticlesByAuthorSortedByCitations);
 
 
         log.info("gen for :  authorService.getJournalWithMostArticlesByAuthor");
@@ -180,7 +181,7 @@ public class DatabaseCommand {
 
             list5.add(entry);
         }
-        serialize(list5, io.pubmed.benchmark.BenchmarkConstants.TEST_DATA, BenchmarkConstants.getJournalWithMostArticlesByAuthor);
+        serialize(list5, BenchmarkConstants.TEST_DATA, BenchmarkConstants.getJournalWithMostArticlesByAuthor);
 
 
 //        log.info("gen for :  authorService.getMinArticlesToLinkAuthors");
@@ -207,7 +208,7 @@ public class DatabaseCommand {
         List<Map.Entry<Object[], Double>> list7 = new ArrayList<>();
         List<Object[]> input7 = new ArrayList<>();
 //        Journal journal1 = new Journal("0151424", "United States", "0006-2944", "Biochemical medicine", new JournalIssue("13", "2"));
-        input7.add(new Object[]{"Molecular pharmacology", 2023});
+        input7.add(new Object[]{"0035623", 2023});
         for (Object[] args : input7){
             var res = journalService.getImpactFactor((String) args[0], (int) args[1]);
             log.info("answer for getImpactFactor:  got {}", res);
@@ -216,7 +217,7 @@ public class DatabaseCommand {
 
             list7.add(entry);
         }
-        serialize(list7, io.pubmed.benchmark.BenchmarkConstants.TEST_DATA, BenchmarkConstants.getImpactFactor);
+        serialize(list7, BenchmarkConstants.TEST_DATA, BenchmarkConstants.getImpactFactor);
 
         log.info("gen for :  journalService.updateJournalName");
         List<Map.Entry<Object[], Boolean>> list8 = new ArrayList<>();
@@ -233,7 +234,7 @@ public class DatabaseCommand {
 
             list8.add(entry);
         }
-        serialize(list8, io.pubmed.benchmark.BenchmarkConstants.TEST_DATA, BenchmarkConstants.updateJournalName);
+        serialize(list8, BenchmarkConstants.TEST_DATA, BenchmarkConstants.updateJournalName);
 
         //---------------------------------------------------------------------KeywordService---------------------------------------------------------------------
         log.info("gen for :  keywordService.getArticleCountByKeywordInPastYears");
@@ -248,13 +249,13 @@ public class DatabaseCommand {
 
             list9.add(entry);
         }
-        serialize(list9, io.pubmed.benchmark.BenchmarkConstants.TEST_DATA, BenchmarkConstants.getArticleCountByKeywordInPastYears);
+        serialize(list9, BenchmarkConstants.TEST_DATA, BenchmarkConstants.getArticleCountByKeywordInPastYears);
     }
 
     @ShellMethod(key = "db test", value = "Test generate data")
     public void test_data() {
 
-        List<Map.Entry<Object[], int[]>> cases = deserialize(io.pubmed.benchmark.BenchmarkConstants.TEST_DATA, io.pubmed.benchmark.BenchmarkConstants.getCountryFundPapers);
+        List<Map.Entry<Object[], int[]>> cases = deserialize(BenchmarkConstants.TEST_DATA, BenchmarkConstants.getCountryFundPapers);
         val pass = new AtomicLong();
 
         val startTime = System.currentTimeMillis();

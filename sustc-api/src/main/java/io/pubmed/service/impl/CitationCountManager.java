@@ -2,15 +2,17 @@ package io.pubmed.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.sql.DataSource;
 import java.sql.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * 单例组件，用于管理 Article_Citation_Count 临时表的引用计数。
+ * 管理 Article_Citation_Count 临时表的引用计数。
  */
 @Component
 @Slf4j
@@ -19,39 +21,49 @@ public class CitationCountManager {
     @Autowired
     private DataSource dataSource;
 
-    // 标识临时表是否已初始化
     private final AtomicBoolean initialized = new AtomicBoolean(false);
+    private Connection connection;
 
     /**
-     * 确保临时表已初始化
+     * 异步初始化临时表
      */
-    private void initializeTempTable() {
+    @Async
+    public void initializeTempTableAsync() {
         if (initialized.compareAndSet(false, true)) {
-            try (Connection conn = dataSource.getConnection();
-                 Statement stmt = conn.createStatement()) {
+            try {
+                // 获取持久连接
+                connection = dataSource.getConnection();
+                Statement stmt = connection.createStatement();
 
                 // 创建临时表
                 String createTempTableSQL = "CREATE TEMPORARY TABLE IF NOT EXISTS Article_Citation_Count (" +
                         "article_id INT PRIMARY KEY REFERENCES Article(id) ON DELETE CASCADE, " +
                         "citation_count INT NOT NULL DEFAULT 0" +
-                        ");";
+                        ") ON COMMIT DROP;";
                 stmt.execute(createTempTableSQL);
-                log.info("Created temporary table Article_Citation_Count.");
+                log.info("创建临时表 Article_Citation_Count 完成。");
 
                 // 初始化引用计数
                 String initCitationCountSQL = "INSERT INTO Article_Citation_Count (article_id, citation_count) " +
                         "SELECT reference_id, COUNT(*) " +
                         "FROM article_references " +
                         "GROUP BY reference_id " +
-                        "ON CONFLICT (article_id) DO UPDATE SET citation_count = EXCLUDED.citation_count;";
+                        "ON CONFLICT (article_id) DO NOTHING;";
                 stmt.execute(initCitationCountSQL);
-                log.info("Initialized citation counts in temporary table Article_Citation_Count.");
+                log.info("初始化临时表中的引用计数完成。");
 
             } catch (SQLException e) {
-                log.error("Error initializing temporary table Article_Citation_Count.", e);
-                // 根据要求，不抛出异常，而是记录日志
+                log.error("初始化临时表失败。", e);
             }
         }
+    }
+
+    /**
+     * 在程序启动时异步初始化临时表
+     */
+    @PostConstruct
+    public void init() {
+        initializeTempTableAsync();
     }
 
     /**
@@ -61,19 +73,19 @@ public class CitationCountManager {
      * @return 引用计数，如果未找到则返回0
      */
     public int getCitationCount(int articleId) {
-        initializeTempTable(); // 确保临时表已初始化
-
+        if (!initialized.get()) {
+            log.warn("临时表尚未初始化。");
+            return 0;
+        }
         String sql = "SELECT citation_count FROM Article_Citation_Count WHERE article_id = ?";
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setInt(1, articleId);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 return rs.getInt("citation_count");
             }
         } catch (SQLException e) {
-            log.error("Error fetching citation count for article ID: {}", articleId, e);
-            // 根据要求，不抛出异常，而是记录日志
+            log.error("获取文章ID {} 的引用计数失败。", articleId, e);
         }
         return 0;
     }
@@ -85,21 +97,20 @@ public class CitationCountManager {
      * @param increment 增加的引用次数
      */
     public void incrementCitationCount(int articleId, int increment) {
-        initializeTempTable(); // 确保临时表已初始化
-
+        if (!initialized.get()) {
+            log.warn("临时表尚未初始化。");
+            return;
+        }
         String sql = "UPDATE Article_Citation_Count SET citation_count = citation_count + ? WHERE article_id = ?";
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setInt(1, increment);
             stmt.setInt(2, articleId);
-            int rowsAffected = stmt.executeUpdate();
-            if (rowsAffected == 0) {
-                // 如果记录不存在，则插入新的记录
+            int rows = stmt.executeUpdate();
+            if (rows == 0) {
                 insertCitationCount(articleId, increment);
             }
         } catch (SQLException e) {
-            log.error("Error incrementing citation count for article ID: {}", articleId, e);
-            // 根据要求，不抛出异常，而是记录日志
+            log.error("增加文章ID {} 的引用计数失败。", articleId, e);
         }
     }
 
@@ -110,37 +121,58 @@ public class CitationCountManager {
      * @param decrement 减少的引用次数
      */
     public void decrementCitationCount(int articleId, int decrement) {
-        initializeTempTable(); // 确保临时表已初始化
-
+        if (!initialized.get()) {
+            log.warn("临时表尚未初始化。");
+            return;
+        }
         String sql = "UPDATE Article_Citation_Count SET citation_count = citation_count - ? WHERE article_id = ?";
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setInt(1, decrement);
             stmt.setInt(2, articleId);
             stmt.executeUpdate();
         } catch (SQLException e) {
-            log.error("Error decrementing citation count for article ID: {}", articleId, e);
-            // 根据要求，不抛出异常，而是记录日志
+            log.error("减少文章ID {} 的引用计数失败。", articleId, e);
         }
     }
 
     /**
      * 插入新的引用计数记录。
      *
-     * @param articleId      文章ID
-     * @param citationCount  引用计数
+     * @param articleId     文章ID
+     * @param citationCount 引用计数
      */
     private void insertCitationCount(int articleId, int citationCount) {
         String sql = "INSERT INTO Article_Citation_Count (article_id, citation_count) VALUES (?, ?)";
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setInt(1, articleId);
             stmt.setInt(2, citationCount);
             stmt.executeUpdate();
         } catch (SQLException e) {
-            log.error("Error inserting citation count for article ID: {}", articleId, e);
-            // 根据要求，不抛出异常，而是记录日志
+            log.error("插入文章ID {} 的引用计数失败。", articleId, e);
         }
+    }
+    /**
+     * 获取指定文章在特定年份的引用次数。
+     *
+     * @param articleId 文章ID
+     * @param year      引用发生的年份
+     * @return 引用次数
+     */
+    public int getCitationsInYear(int articleId, int year) {
+        String sql = "SELECT COUNT(*) AS citations FROM Article_References ar " +
+                "JOIN Article citing ON ar.citing_article_id = citing.id " +
+                "WHERE ar.referenced_article_id = ? AND EXTRACT(YEAR FROM citing.date_completed) = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, articleId);
+            stmt.setInt(2, year);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("citations");
+            }
+        } catch (SQLException e) {
+            log.error("获取文章ID {} 在年份 {} 的引用次数失败。", articleId, year, e);
+        }
+        return 0;
     }
 
     /**
@@ -148,16 +180,15 @@ public class CitationCountManager {
      */
     @PreDestroy
     public void cleanup() {
-        try (Connection conn = dataSource.getConnection();
-             Statement stmt = conn.createStatement()) {
-
-            String dropTempTableSQL = "DROP TABLE IF EXISTS Article_Citation_Count;";
-            stmt.execute(dropTempTableSQL);
-            log.info("Dropped temporary table Article_Citation_Count on shutdown.");
-
-        } catch (SQLException e) {
-            log.error("Error dropping temporary table Article_Citation_Count on shutdown.", e);
-
+        if (connection != null) {
+            try (Statement stmt = connection.createStatement()) {
+                String dropTempTableSQL = "DROP TABLE IF EXISTS Article_Citation_Count;";
+                stmt.execute(dropTempTableSQL);
+                log.info("删除临时表 Article_Citation_Count 完成。");
+                connection.close();
+            } catch (SQLException e) {
+                log.error("删除临时表失败。", e);
+            }
         }
     }
 }
