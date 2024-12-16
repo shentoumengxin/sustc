@@ -69,4 +69,52 @@ public class Article implements Serializable {
      * pub_model of this article.
      */
     private String pub_model;
+
+    public int getId() {
+        return id;
+    }
+
+    public Author[] getAuthors() {
+        return authors;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String[] getKeywords() {
+        return keywords;
+    }
+
+    public Journal getJournal() {
+        return journal;
+    }
+
+    public String[] getReferences() {
+        return references;
+    }
+
+    public ArticleID[] getArticle_ids() {
+        return article_ids;
+    }
+
+    public PublicationType[] getPublication_types() {
+        return publication_types;
+    }
+
+    public Grant[] getGrants() {
+        return grants;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public Date getCompleted() {
+        return completed;
+    }
+
+    public String getPub_model() {
+        return pub_model;
+    }
 }

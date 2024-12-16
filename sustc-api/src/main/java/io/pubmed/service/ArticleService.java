@@ -17,8 +17,7 @@ public interface ArticleService {
     /**
      * Fist, add one article to your database
      * Second, output the journal IF after adding this article
-     * Third, delete the article from your database
-     *
+     * Third, delete the article from your database*
      * if year = 2024, you need sum citations of given journal in 2024 /
      * [2022-2023] published articles num in the journal.
      * Example:

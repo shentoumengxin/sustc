@@ -249,11 +249,11 @@ public class GoodLoader {
 
     public static void main(String[] args) {
         String fileName;
-        fileName = "D:\\Edge浏览器下载\\Project2\\json\\pubmed24n.ndjson";
+        fileName = "C:\\Users\\admin\\Documents\\GitHub\\sustc\\pubmed24n.ndjson";
         Properties properties = new Properties();
         properties.put("host", "localhost");
-        properties.put("user", "zzh");
-        properties.put("password", "2580");
+        properties.put("user", "postgres");
+        properties.put("password", "123456");
         properties.put("database", "sustec");
         Properties prop = new Properties(properties);
         try (BufferedReader infile

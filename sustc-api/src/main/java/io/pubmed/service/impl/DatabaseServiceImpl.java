@@ -33,7 +33,6 @@ public class DatabaseServiceImpl implements DatabaseService {
 
     @Override
     public List<Integer> getGroupMembers() {
-        //TODO: replace this with your own student IDs in your group
         return Arrays.asList(12311624, 12311124);
     }
 

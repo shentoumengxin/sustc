@@ -22,6 +22,10 @@ public class Author implements Serializable {
 
     private String collective_name;
 
+    public String getInitials() {
+        return initials;
+    }
+
     public String getFore_name() {
         return fore_name;
     }
