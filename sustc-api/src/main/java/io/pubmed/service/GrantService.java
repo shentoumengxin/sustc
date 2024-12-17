@@ -1,6 +1,8 @@
 package io.pubmed.service;
 
-public interface GrantService {
+public interface
+
+GrantService {
 
     /**
      * Find all the funded articles by the given country

@@ -38,7 +38,7 @@ public class ArticleServiceImpl implements ArticleService {
 
         return 0;  // 如果没有找到引用，则返回0
     }
-    @Override
+    @Override//还未写完
     public double addArticleAndUpdateIF(Article article) {
         String insertSql = "INSERT INTO article (id,title, pub_model, date_created, date_completed) " +
                 "VALUES (?, ?, ?, ?) RETURNING id;" +
