@@ -8,8 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import javax.sql.DataSource;
 import java.sql.*;
-import java.util.List;
 
+import java.sql.PreparedStatement;
 @Service
 @Slf4j
 public class ArticleServiceImpl implements ArticleService {
@@ -40,36 +40,72 @@ public class ArticleServiceImpl implements ArticleService {
     }
     @Override//还未写完
     public double addArticleAndUpdateIF(Article article) {
-        String insertSql = "INSERT INTO article (id,title, pub_model, date_created, date_completed) " +
-                "VALUES (?, ?, ?, ?) RETURNING id;" +
-                "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             +--";
-        String DeleteSql="delete from article where id=?";
-       return 0;
+return 0;
     }
+    //自己实现的代码
+    public void insertArticleAndJournal(Article article) throws SQLException {
+        // Step 1: Insert the article into the Article table
+        String insertArticleSQL = "INSERT INTO Article (id, title, pub_model, date_created, date_completed) " +
+                "VALUES (?, ?, ?, ?, ?)";
 
-    // 获取与文章相关的期刊
-    private Journal getJournalByArticleId(int articleId) {
-        String sql = "SELECT j.id, j.title FROM journal j " +
-                "JOIN article_journal aj ON j.id = aj.journal_id " +
-                "WHERE aj.article_id = ?";
+        try (PreparedStatement articleStmt = dataSource.getConnection().prepareStatement(insertArticleSQL)) {
+            articleStmt.setInt(1, article.getId());
+            articleStmt.setString(2, article.getTitle());
+            articleStmt.setString(3, article.getPub_model());
+            articleStmt.setDate(4, new java.sql.Date(article.getCreated().getTime()));
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setInt(1, articleId);
-            ResultSet rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                Journal journal = new Journal();
-                journal.setId(rs.getString("id"));
-                journal.setTitle(rs.getString("title"));
-                return journal;
+            if (article.getCompleted() != null) {
+                articleStmt.setDate(5, new java.sql.Date(article.getCompleted().getTime()));
+            } else {
+                articleStmt.setNull(5, Types.DATE);
             }
 
-        } catch (SQLException e) {
-            log.error("Error fetching journal by article ID", e);
+            articleStmt.executeUpdate();
         }
 
-        return null;
+        // Step 2: Insert the journal into the Journal table (if not exists)
+        String journalId = insertOrGetJournal(article.getJournal());
+
+        // Step 3: Insert the article-journal relation into the Article_Journal table
+        String insertArticleJournalSQL = "INSERT INTO Article_Journal (journal_id, article_id) VALUES (?, ?)";
+        try (PreparedStatement articleJournalStmt = dataSource.getConnection().prepareStatement(insertArticleJournalSQL)) {
+            articleJournalStmt.setString(1, journalId);
+            articleJournalStmt.setInt(2, article.getId());
+            articleJournalStmt.executeUpdate();
+        }
+    }
+
+    /**
+     * Insert the journal into the Journal table if it does not exist, or retrieve its ID if it exists.
+     * @param journal the journal to be inserted
+     * @return the journal ID
+     * @throws SQLException if any SQL error occurs
+     */
+    private String insertOrGetJournal(Journal journal) throws SQLException {
+        // Check if the journal exists
+        String checkJournalSQL = "SELECT id FROM Journal WHERE id = ?";
+        try (PreparedStatement checkStmt = dataSource.getConnection().prepareStatement(checkJournalSQL)) {
+            checkStmt.setString(1, journal.getId());
+            ResultSet rs = checkStmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getString("id"); // Return existing journal ID
+            }
+        }
+
+        // If the journal does not exist, insert a new record
+        String insertJournalSQL = "INSERT INTO Journal (id, country, issn, title, volume, issue) " +
+                "VALUES (?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement insertStmt = dataSource.getConnection().prepareStatement(insertJournalSQL)) {
+            insertStmt.setString(1, journal.getId());
+            insertStmt.setString(2, journal.getCountry());
+            insertStmt.setString(3, journal.getIssn());
+            insertStmt.setString(4, journal.getTitle());
+            insertStmt.setString(5, journal.getIssue().getVolume());
+            insertStmt.setString(6, journal.getIssue().getIssue());
+            insertStmt.executeUpdate();
+        }
+
+        return journal.getId(); // Return newly created journal ID
     }
 }
