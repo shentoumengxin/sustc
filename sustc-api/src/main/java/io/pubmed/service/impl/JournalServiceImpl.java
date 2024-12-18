@@ -45,10 +45,6 @@ public class JournalServiceImpl implements JournalService {
                 "JOIN Journal j ON aj.journal_id = j.id " +
                 "WHERE j.id = ? AND EXTRACT(YEAR FROM a.date_completed) IN (?, ?)";
 
-        String sqlCitations = "SELECT COUNT(*) AS total_citations FROM Article_References ar " +
-                "JOIN Article citing ON ar.citing_article_id = citing.id " +
-                "WHERE ar.referenced_article_id = ? AND EXTRACT(YEAR FROM citing.date_completed) = ?";
-
         String sqlCountArticles = "SELECT COUNT(*) AS total_articles FROM Article a " +
                 "JOIN Article_Journal aj ON a.id = aj.article_id " +
                 "JOIN Journal j ON aj.journal_id = j.id " +
