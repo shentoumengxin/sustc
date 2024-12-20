@@ -23,15 +23,14 @@ public class AuthorServiceImpl implements AuthorService {
 
     @Override
     public int[] getArticlesByAuthorSortedByCitations(Author author) {
-        String sql = "SELECT a.id AS article_id" +
-                "FROM Article a" +
-                "JOIN Article_Authors aa ON a.id = aa.article_id" +
-                "JOIN Authors auth ON aa.author_id = auth.author_id" +
-                "WHERE auth.fore_name = ?" +
-                "  AND auth.last_name = ?   " ;
+        String sql = "SELECT a.id AS article_id " +
+                "FROM Article a " +
+                "JOIN Article_Authors aa ON a.id = aa.article_id " +
+                "JOIN Authors auth ON aa.author_id = auth.author_id " +
+                "WHERE auth.fore_name = ? " +
+                "AND auth.last_name = ?";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-
             stmt.setString(1, author.getFore_name());
             stmt.setString(2, author.getLast_name());
             ResultSet rs = stmt.executeQuery();
