@@ -28,14 +28,12 @@ public class AuthorServiceImpl implements AuthorService {
                 "JOIN Article_Authors aa ON a.id = aa.article_id" +
                 "JOIN Authors auth ON aa.author_id = auth.author_id" +
                 "WHERE auth.fore_name = ?" +
-                "  AND auth.last_name = ?   " +
-                "  AND auth.initials = ?";
+                "  AND auth.last_name = ?   " ;
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, author.getFore_name());
             stmt.setString(2, author.getLast_name());
-            stmt.setString(3, author.getInitials());
             ResultSet rs = stmt.executeQuery();
             ArrayList<Integer> a = new ArrayList<>();
             while (rs.next()) {
@@ -43,6 +41,9 @@ public class AuthorServiceImpl implements AuthorService {
                 a.add(citationCountManager.getCitationCount(articleId));
             }
             int[] result = new int[a.size()];
+            for (int i = 0; i < a.size(); i++) {
+                result[i]=a.get(i);
+            }
             Arrays.sort(result);
             // 反转数组使其变为降序
             for (int i = 0; i < result.length / 2; i++) {
@@ -52,6 +53,7 @@ public class AuthorServiceImpl implements AuthorService {
             }
             return result;
         } catch (SQLException e) {
+            System.out.println(author);
             log.error("Error fetching article citations", e);
             throw new RuntimeException("Error fetching article citations", e);
         }
@@ -66,7 +68,6 @@ public class AuthorServiceImpl implements AuthorService {
                 "JOIN Authors a ON aa.author_id = a.author_id " +
                 "WHERE a.fore_name = ? " +
                 "  AND a.last_name = ? " +
-                "  AND a.initials = ? " +
                 "GROUP BY j.title " +
                 "ORDER BY COUNT(aj.article_id) DESC " +
                 "LIMIT 1";
@@ -78,7 +79,6 @@ public class AuthorServiceImpl implements AuthorService {
             // 设置查询参数
             stmt.setString(1, author.getFore_name());
             stmt.setString(2, author.getLast_name());
-            stmt.setString(3, author.getInitials());
 
             // 执行查询
             ResultSet rs = stmt.executeQuery();
