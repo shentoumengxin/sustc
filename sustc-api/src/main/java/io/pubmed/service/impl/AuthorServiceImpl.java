@@ -152,12 +152,11 @@ public class AuthorServiceImpl implements AuthorService {
         Set<Integer> articles = new HashSet<>();
         String sql = "SELECT a.id FROM Article a JOIN Article_Authors aa ON a.id = aa.article_id " +
                 "JOIN Authors auth ON aa.author_id = auth.author_id WHERE auth.fore_name = ? " +
-                "AND auth.last_name = ? AND auth.initials = ?";
+                "AND auth.last_name = ?";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, author.getFore_name());
             stmt.setString(2, author.getLast_name());
-            stmt.setString(3, author.getInitials());
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
                 articles.add(rs.getInt("id"));
@@ -169,13 +168,12 @@ public class AuthorServiceImpl implements AuthorService {
     // Helper method to check if an article is written by a specific author
     private boolean isArticleWrittenByAuthor(int articleId, Author author) throws SQLException {
         String sql = "SELECT COUNT(*) FROM Article_Authors aa JOIN Authors auth ON aa.author_id = auth.author_id " +
-                "WHERE aa.article_id = ? AND auth.fore_name = ? AND auth.last_name = ? AND auth.initials = ?";
+                "WHERE aa.article_id = ? AND auth.fore_name = ? AND auth.last_name = ? ";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, articleId);
             stmt.setString(2, author.getFore_name());
             stmt.setString(3, author.getLast_name());
-            stmt.setString(4, author.getInitials());
             ResultSet rs = stmt.executeQuery();
             return rs.next() && rs.getInt(1) > 0;
         }

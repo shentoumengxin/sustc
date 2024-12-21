@@ -14,10 +14,15 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-jdbc")
     implementation("com.alibaba.fastjson2:fastjson2:2.0.53")
     implementation("org.postgresql:postgresql:42.7.4")
-
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.postgresql:postgresql")  // 用于连接 PostgreSQL 数据库
+    compileOnly ("org.projectlombok:lombok:1.18.24")  // Lombok 依赖
+    annotationProcessor ("org.projectlombok:lombok:1.18.24")  // Lombok 注解处理器
+}
+    // 其他依赖
     // You may add any utility library you want to use, such as guava.
     // ORM libraries are prohibited in this project.
-}
 
 tasks.withType<BootRun> {
     enabled = false

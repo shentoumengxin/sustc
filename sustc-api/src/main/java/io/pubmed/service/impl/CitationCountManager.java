@@ -36,10 +36,10 @@ public class CitationCountManager {
                 Statement stmt = connection.createStatement();
 
                 // 创建临时表
-                String createTempTableSQL = "CREATE TEMPORARY TABLE IF NOT EXISTS Article_Citation_Count (" +
+                String createTempTableSQL = "CREATE  TABLE IF NOT EXISTS Article_Citation_Count (" +
                         "article_id INT PRIMARY KEY REFERENCES Article(id) ON DELETE CASCADE, " +
                         "citation_count INT NOT NULL DEFAULT 0" +
-                        ") ON COMMIT DROP;";
+                        ");";
                 stmt.execute(createTempTableSQL);
                 log.info("创建临时表 Article_Citation_Count 完成。");
 

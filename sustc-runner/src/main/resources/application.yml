@@ -1,10 +1,12 @@
+server:
+  port: 8080  # 确保端口配置正确
 spring:
   datasource:
     # TODO: change the following to your own database configuration
-    url:   jdbc:postgresql://localhost:5432/sustec
+    url:   jdbc:postgresql://localhost:5432/sustc
     username:   postgres
     password:   123456
-
+    driver-class-name: org.postgresql.Driver
     hikari:
       connection-timeout: 180000
       leak-detection-threshold: 120000

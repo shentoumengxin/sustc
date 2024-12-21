@@ -254,7 +254,7 @@ public class GoodLoader {
         properties.put("host", "localhost");
         properties.put("user", "postgres");
         properties.put("password", "123456");
-        properties.put("database", "sustec");
+        properties.put("database", "sustc");
         Properties prop = new Properties(properties);
         try (BufferedReader infile
                      = new BufferedReader(new FileReader(fileName))) {
