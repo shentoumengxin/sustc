@@ -47,7 +47,6 @@ public class UserServiceImpl implements UserService {
         String insertUserSql = "INSERT INTO users (username, password, role) VALUES (?, ?, ?)";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(insertUserSql, Statement.RETURN_GENERATED_KEYS)) {
-
             // 插入用户数据
             stmt.setString(1, user.getUsername());
             stmt.setString(2, user.getPassword());  // 直接存储明文密码
