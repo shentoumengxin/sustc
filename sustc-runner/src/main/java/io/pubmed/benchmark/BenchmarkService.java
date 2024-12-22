@@ -137,6 +137,7 @@ public class BenchmarkService {
         val pass = new AtomicLong();
 
         val startTime = System.currentTimeMillis();
+
         cases.parallelStream().forEach(it -> {
             try {
                 val args = it.getKey();

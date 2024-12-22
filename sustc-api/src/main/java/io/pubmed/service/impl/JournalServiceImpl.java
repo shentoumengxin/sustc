@@ -81,12 +81,10 @@ public class JournalServiceImpl implements JournalService {
             // 计算影响因子
             if (totalArticles != 0) {
                 impactFactor = (double) totalCitations / totalArticles;
-            } else {
-                log.warn("前两年发表文章数量为零，无法计算影响因子。");
             }
 
         } catch (SQLException e) {
-            log.error("计算期刊影响因子时发生错误。", e);
+
         }
 
         return impactFactor;
