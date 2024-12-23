@@ -43,7 +43,7 @@ public class JournalServiceImpl implements JournalService {
         String sqlArticles = "SELECT a.id FROM Article a " +
                 "JOIN Article_Journal aj ON a.id = aj.article_id " +
                 "JOIN Journal j ON aj.journal_id = j.id " +
-                "WHERE j.id = ? AND EXTRACT(YEAR FROM a.date_completed) IN (?, ?)";
+                "WHERE j.title=? AND EXTRACT(YEAR FROM a.date_completed) IN (?, ?)";
 
         String sqlCountArticles = "SELECT COUNT(*) AS total_articles FROM Article a " +
                 "JOIN Article_Journal aj ON a.id = aj.article_id " +
@@ -116,7 +116,6 @@ public class JournalServiceImpl implements JournalService {
         Connection conn = null;
         PreparedStatement stmtInsert = null;
         PreparedStatement stmtUpdate = null;
-
         try {
             conn = dataSource.getConnection();
             conn.setAutoCommit(false); // 开始事务
@@ -138,7 +137,7 @@ public class JournalServiceImpl implements JournalService {
 
             log.info("Updated journal name from {} to {} for {} articles starting from year {}",
                     journal.getTitle(), new_name, rowsUpdated, year);
-            return true;
+            return rowsUpdated>0;
         } catch (SQLException e) {
             log.error("Error updating journal name for journal: {} starting from year: {}",
                     journal.getTitle(), year, e);

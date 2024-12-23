@@ -37,18 +37,23 @@ public class CitationCountManager {
 
                 // 创建临时表
                 String createTempTableSQL = "CREATE  TABLE IF NOT EXISTS Article_Citation_Count (" +
-                        "article_id INT PRIMARY KEY REFERENCES Article(id) ON DELETE CASCADE, " +
+                        "article_id INT  , " +
                         "citation_count INT NOT NULL DEFAULT 0" +
+                        "citation_year int not null "+
+                        "primary key(article_id,citation_year)"+
                         ");";
                 stmt.execute(createTempTableSQL);
                 log.info("创建临时表 Article_Citation_Count 完成。");
 
                 // 初始化引用计数
-                String initCitationCountSQL = "INSERT INTO Article_Citation_Count (article_id, citation_count) " +
-                        "SELECT reference_id, COUNT(*) " +
-                        "FROM article_references " +
-                        "GROUP BY reference_id " +
-                        "ON CONFLICT (article_id) DO NOTHING;";
+                String initCitationCountSQL = "INSERT INTO Article_Citation_Count (article_id, citation_count, citation_year) " +
+                        "SELECT ar.reference_id AS article_id, " +
+                        "COUNT(*) AS citation_count, " +
+                        "EXTRACT(YEAR FROM a.date_created) AS citation_year " +
+                        "FROM article_references ar " +
+                        "JOIN Article a ON ar.article_id = a.id " +
+                        "GROUP BY ar.reference_id, EXTRACT(YEAR FROM a.date_created); " ;
+
                 stmt.execute(initCitationCountSQL);
                 log.info("初始化临时表中的引用计数完成。");
 
@@ -72,6 +77,13 @@ public class CitationCountManager {
      * @param articleId 文章ID
      * @return 引用计数，如果未找到则返回0
      */
+
+    /**
+     * 获取指定文章的引用计数。
+     *
+     * @param articleId 文章ID
+     * @return 引用计数，如果未找到则返回0
+     */
     public int getCitationCount(int articleId) {
         if (!initialized.get()) {
             log.warn("临时表尚未初始化。");
@@ -81,9 +93,11 @@ public class CitationCountManager {
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setInt(1, articleId);
             ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                return rs.getInt("citation_count");
+            int result=0;
+            while (rs.next()) {
+                result+=rs.getInt("citation_count");
             }
+            return result;
         } catch (SQLException e) {
             log.error("获取文章ID {} 的引用计数失败。", articleId, e);
         }
@@ -96,18 +110,19 @@ public class CitationCountManager {
      * @param articleId 文章ID
      * @param increment 增加的引用次数
      */
-    public void incrementCitationCount(int articleId, int increment) {
+    public void incrementCitationCount(int articleId, int increment,int year) {
         if (!initialized.get()) {
             log.warn("临时表尚未初始化。");
             return;
         }
-        String sql = "UPDATE Article_Citation_Count SET citation_count = citation_count + ? WHERE article_id = ?";
+        String sql = "UPDATE Article_Citation_Count SET citation_count = citation_count + ? WHERE article_id = ? and citation_year=?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setInt(1, increment);
             stmt.setInt(2, articleId);
+            stmt.setInt(3, year);
             int rows = stmt.executeUpdate();
             if (rows == 0) {
-                insertCitationCount(articleId, increment);
+                insertCitationCount(articleId, increment,year);
             }
         } catch (SQLException e) {
             log.error("增加文章ID {} 的引用计数失败。", articleId, e);
@@ -120,15 +135,16 @@ public class CitationCountManager {
      * @param articleId 文章ID
      * @param decrement 减少的引用次数
      */
-    public void decrementCitationCount(int articleId, int decrement) {
+    public void decrementCitationCount(int articleId, int decrement,int year) {
         if (!initialized.get()) {
             log.warn("临时表尚未初始化。");
             return;
         }
-        String sql = "UPDATE Article_Citation_Count SET citation_count = citation_count - ? WHERE article_id = ?";
+        String sql = "UPDATE Article_Citation_Count SET citation_count = citation_count - ? WHERE article_id = ? and citation_year=?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setInt(1, decrement);
             stmt.setInt(2, articleId);
+            stmt.setInt(3, year);
             stmt.executeUpdate();
         } catch (SQLException e) {
             log.error("减少文章ID {} 的引用计数失败。", articleId, e);
@@ -141,11 +157,12 @@ public class CitationCountManager {
      * @param articleId     文章ID
      * @param citationCount 引用计数
      */
-    private void insertCitationCount(int articleId, int citationCount) {
-        String sql = "INSERT INTO Article_Citation_Count (article_id, citation_count) VALUES (?, ?)";
+    private void insertCitationCount(int articleId, int citationCount,int year) {
+        String sql = "INSERT INTO Article_Citation_Count (article_id, citation_count,citation_year) VALUES (?, ?,?)";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setInt(1, articleId);
             stmt.setInt(2, citationCount);
+            stmt.setInt(3, year);
             stmt.executeUpdate();
         } catch (SQLException e) {
             log.error("插入文章ID {} 的引用计数失败。", articleId, e);
@@ -159,9 +176,7 @@ public class CitationCountManager {
      * @return 引用次数
      */
     public int getCitationsInYear(int articleId, int year) {
-        String sql = "SELECT COUNT(*) AS citations FROM Article_References ar " +
-                "JOIN Article citing ON ar.citing_article_id = citing.id " +
-                "WHERE ar.referenced_article_id = ? AND EXTRACT(YEAR FROM citing.date_completed) = ?";
+        String sql = "SELECT citation_count FROM Article_Citation_Count WHERE article_id = ? and citation_year=?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setInt(1, articleId);
             stmt.setInt(2, year);

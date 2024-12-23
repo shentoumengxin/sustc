@@ -51,17 +51,20 @@ public class ArticleServiceImpl implements ArticleService {
     @Override
     public double addArticleAndUpdateIF(Article article) {
         try {
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(article.getCompleted());
+            int year = calendar.get(Calendar.YEAR);
             insertArticleAndJournal(article);
             if (article.getReferences() != null) {
                 for (int i = 0; i < article.getReferences().length; i++) {
                     int id = Integer.parseInt(article.getReferences()[i]);
-                    citationCountManager.incrementCitationCount(id, 1);
+                    citationCountManager.incrementCitationCount(id, 1,year);
                 }
             }
             String sqlArticles = "SELECT a.id FROM Article a " +
                     "JOIN Article_Journal aj ON a.id = aj.article_id " +
                     "JOIN Journal j ON aj.journal_id = j.id " +
-                    "WHERE j.id = ? AND EXTRACT(YEAR FROM a.date_completed) IN (?, ?)";
+                    "WHERE j.title = ? AND EXTRACT(YEAR FROM a.date_completed) IN (?, ?)";
 
             String sqlCountArticles = "SELECT COUNT(*) AS total_articles FROM Article a " +
                     "JOIN Article_Journal aj ON a.id = aj.article_id " +
@@ -75,9 +78,6 @@ public class ArticleServiceImpl implements ArticleService {
             Connection conn = dataSource.getConnection();
             // 获取前两年发表的文章ID
             Journal journal = article.getJournal();
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTime(article.getCompleted());
-            int year = calendar.get(Calendar.YEAR);
             PreparedStatement stmtArticles = conn.prepareStatement(sqlArticles);
             stmtArticles.setString(1, journal.getTitle());
             stmtArticles.setInt(2, year - 2);
