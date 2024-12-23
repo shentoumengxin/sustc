@@ -34,22 +34,33 @@ public class AuthorServiceImpl implements AuthorService {
             stmt.setString(1, author.getFore_name());
             stmt.setString(2, author.getLast_name());
             ResultSet rs = stmt.executeQuery();
-            ArrayList<Integer> a = new ArrayList<>();
-            while (rs.next()) {
-                int articleId = rs.getInt("article_id");
-                a.add(citationCountManager.getCitationCount(articleId));
+            HashMap<Integer, Integer> a = new HashMap<>();
+            try {
+                while (rs.next()) {
+                    int articleId = rs.getInt("article_id");
+                    // 获取 citationCount
+                    int citationCount = citationCountManager.getCitationCount(articleId);
+                    a.put(articleId, citationCount);
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
-            int[] result = new int[a.size()];
-            for (int i = 0; i < a.size(); i++) {
-                result[i]=a.get(i);
+
+            // 将 HashMap 的 entry 转换为 List
+            List<Map.Entry<Integer, Integer>> list = new ArrayList<>(a.entrySet());
+
+            // 按照 citationCount 值降序排序
+            list.sort((entry1, entry2) -> entry2.getValue().compareTo(entry1.getValue()));
+
+            // 创建一个 result 数组来保存排序后的 article_id
+            int[] result = new int[list.size()];
+
+            // 提取排序后的 article_id
+            for (int i = 0; i < list.size(); i++) {
+                result[i] = list.get(i).getKey();
             }
-            Arrays.sort(result);
-            // 反转数组使其变为降序
-            for (int i = 0; i < result.length / 2; i++) {
-                int temp = result[i];
-                result[i] = result[result.length - 1 - i];
-                result[result.length - 1 - i] = temp;
-            }
+
+            // 返回排序后的结果
             return result;
         } catch (SQLException e) {
             System.out.println(author);

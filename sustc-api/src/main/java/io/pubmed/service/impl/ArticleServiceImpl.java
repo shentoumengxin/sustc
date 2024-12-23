@@ -64,12 +64,12 @@ public class ArticleServiceImpl implements ArticleService {
             String sqlArticles = "SELECT a.id FROM Article a " +
                     "JOIN Article_Journal aj ON a.id = aj.article_id " +
                     "JOIN Journal j ON aj.journal_id = j.id " +
-                    "WHERE j.title = ? AND EXTRACT(YEAR FROM a.date_completed) IN (?, ?)";
+                    "WHERE j.title = ? AND EXTRACT(YEAR FROM a.date_completed)::int  IN (?, ?)";
 
             String sqlCountArticles = "SELECT COUNT(*) AS total_articles FROM Article a " +
                     "JOIN Article_Journal aj ON a.id = aj.article_id " +
                     "JOIN Journal j ON aj.journal_id = j.id " +
-                    "WHERE j.title = ? AND EXTRACT(YEAR FROM a.date_completed) IN (?, ?)";
+                    "WHERE j.title = ? AND EXTRACT(YEAR FROM a.date_completed)::int IN (?, ?)";
 
             double impactFactor = 0.0;
             int totalCitations = 0;
@@ -110,10 +110,9 @@ public class ArticleServiceImpl implements ArticleService {
             return impactFactor;
 
         } catch (SQLException e) {
+            System.out.println(article);
             throw new RuntimeException(e);
-
         }
-
     }
 
     //自己实现的代码
@@ -162,34 +161,15 @@ public class ArticleServiceImpl implements ArticleService {
                 journalId = rs.getString("id");
             } else {
                 // 如果期刊不存在，插入新的期刊
-                String insertJournalSQL = "INSERT INTO Journal (id, country, issn, title, volume, issue) VALUES (?, ?, ?, ?, ?, ?)";
+                String insertJournalSQL = "INSERT INTO Journal (id, country, issn, title, volume, issue) VALUES (?, '', '', ?,'', '')";
 
                 try (PreparedStatement insertStmt = conn.prepareStatement(insertJournalSQL)) {
                     insertStmt.setString(1, article.getJournal().getId());  // 设置新的 journal_id
-                    insertStmt.setString(2, "");
-                    insertStmt.setString(3,"");
-                    insertStmt.setString(4, article.getJournal().getTitle());
-                    if (article.getJournal().getIssue()!=null) {
-                        if (article.getJournal().getIssue().getVolume()!=null) {
-                            insertStmt.setString(5, article.getJournal().getIssue().getVolume());
-                        }else{
-                            insertStmt.setString(5,"");
-                        }
-                        if (article.getJournal().getIssue().getIssue()!=null) {
-                            insertStmt.setString(6, article.getJournal().getIssue().getIssue());
-                        }else{
-                            insertStmt.setString(6, "");
-                        }
-                    }else{
-                        insertStmt.setString(5, "");
-                        insertStmt.setString(6, "");
-                    }
+                    insertStmt.setString(2, article.getJournal().getTitle());
                     insertStmt.executeUpdate();
                 }
             }
-
             String insertArticleJournalSQL = "INSERT INTO Article_Journal (journal_id, article_id) VALUES (?, ?)";
-
             // Assuming the journal object is part of the article object
             try (PreparedStatement stmt = dataSource.getConnection().prepareStatement(insertArticleJournalSQL)) {
                 // Set parameters for the Article_Journal table
