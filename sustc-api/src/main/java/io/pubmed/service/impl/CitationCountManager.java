@@ -30,18 +30,15 @@ public class CitationCountManager {
     @Async
     public void initializeTempTableAsync() {
         if (initialized.compareAndSet(false, true)) {
-            try {
-                // 获取持久连接
-                connection = dataSource.getConnection();
-                Statement stmt = connection.createStatement();
+            try (Connection connection = dataSource.getConnection();
+                 Statement stmt = connection.createStatement()) {
 
                 // 创建临时表
                 String createTempTableSQL = "CREATE  TABLE IF NOT EXISTS Article_Citation_Count (" +
-                        "article_id INT  , " +
-                        "citation_count INT NOT NULL DEFAULT 0," +
-                        "citation_year int not null, "+
-                        "primary key(article_id,citation_year) "+
-                        ");";
+                        "article_id INT, " +
+                        "citation_count INT NOT NULL DEFAULT 0, " +
+                        "citation_year INT NOT NULL, " +
+                        "PRIMARY KEY(article_id, citation_year));";
                 stmt.execute(createTempTableSQL);
                 log.info("创建临时表 Article_Citation_Count 完成。");
 
@@ -52,7 +49,7 @@ public class CitationCountManager {
                         "EXTRACT(YEAR FROM a.date_created)::int AS citation_year " +
                         "FROM article_references ar " +
                         "JOIN Article a ON ar.article_id = a.id " +
-                        "GROUP BY (ar.reference_id, EXTRACT(YEAR FROM a.date_created)::int); " ;
+                        "GROUP BY (ar.reference_id, EXTRACT(YEAR FROM a.date_created)::int);";
 
                 stmt.execute(initCitationCountSQL);
                 log.info("初始化临时表中的引用计数完成。");
@@ -62,6 +59,7 @@ public class CitationCountManager {
             }
         }
     }
+
 
     /**
      * 在程序启动时异步初始化临时表
@@ -195,20 +193,19 @@ public class CitationCountManager {
      */
     @PreDestroy
     public void cleanup() {
-        try {
-            connection=dataSource.getConnection();
+        try (Connection connection = dataSource.getConnection()) {
             if (connection != null) {
                 try (Statement stmt = connection.createStatement()) {
                     String dropTempTableSQL = "DROP TABLE IF EXISTS Article_Citation_Count;";
-                    stmt.execute(dropTempTableSQL);
-                    log.info("删除临时表 Article_Citation_Count 完成。");
-                    connection.close();
+                    boolean result = stmt.execute(dropTempTableSQL);
+                    log.info("删除临时表 Article_Citation_Count 完成，SQL 执行结果：{}", result);
                 } catch (SQLException e) {
                     log.error("删除临时表失败。", e);
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            log.error("数据库连接失败，无法删除临时表。", e);
         }
     }
+
 }
