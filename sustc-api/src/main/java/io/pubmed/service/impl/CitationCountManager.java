@@ -38,9 +38,9 @@ public class CitationCountManager {
                 // 创建临时表
                 String createTempTableSQL = "CREATE  TABLE IF NOT EXISTS Article_Citation_Count (" +
                         "article_id INT  , " +
-                        "citation_count INT NOT NULL DEFAULT 0" +
-                        "citation_year int not null "+
-                        "primary key(article_id,citation_year)"+
+                        "citation_count INT NOT NULL DEFAULT 0," +
+                        "citation_year int not null, "+
+                        "primary key(article_id,citation_year) "+
                         ");";
                 stmt.execute(createTempTableSQL);
                 log.info("创建临时表 Article_Citation_Count 完成。");
@@ -49,10 +49,10 @@ public class CitationCountManager {
                 String initCitationCountSQL = "INSERT INTO Article_Citation_Count (article_id, citation_count, citation_year) " +
                         "SELECT ar.reference_id AS article_id, " +
                         "COUNT(*) AS citation_count, " +
-                        "EXTRACT(YEAR FROM a.date_created) AS citation_year " +
+                        "EXTRACT(YEAR FROM a.date_created)::int AS citation_year " +
                         "FROM article_references ar " +
                         "JOIN Article a ON ar.article_id = a.id " +
-                        "GROUP BY ar.reference_id, EXTRACT(YEAR FROM a.date_created); " ;
+                        "GROUP BY (ar.reference_id, EXTRACT(YEAR FROM a.date_created)::int); " ;
 
                 stmt.execute(initCitationCountSQL);
                 log.info("初始化临时表中的引用计数完成。");
@@ -182,7 +182,7 @@ public class CitationCountManager {
             stmt.setInt(2, year);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
-                return rs.getInt("citations");
+                return rs.getInt("citation_count");
             }
         } catch (SQLException e) {
             log.error("获取文章ID {} 在年份 {} 的引用次数失败。", articleId, year, e);
@@ -195,15 +195,20 @@ public class CitationCountManager {
      */
     @PreDestroy
     public void cleanup() {
-        if (connection != null) {
-            try (Statement stmt = connection.createStatement()) {
-                String dropTempTableSQL = "DROP TABLE IF EXISTS Article_Citation_Count;";
-                stmt.execute(dropTempTableSQL);
-                log.info("删除临时表 Article_Citation_Count 完成。");
-                connection.close();
-            } catch (SQLException e) {
-                log.error("删除临时表失败。", e);
+        try {
+            connection=dataSource.getConnection();
+            if (connection != null) {
+                try (Statement stmt = connection.createStatement()) {
+                    String dropTempTableSQL = "DROP TABLE IF EXISTS Article_Citation_Count;";
+                    stmt.execute(dropTempTableSQL);
+                    log.info("删除临时表 Article_Citation_Count 完成。");
+                    connection.close();
+                } catch (SQLException e) {
+                    log.error("删除临时表失败。", e);
+                }
             }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 }

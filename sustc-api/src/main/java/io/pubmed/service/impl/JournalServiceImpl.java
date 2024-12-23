@@ -34,21 +34,21 @@ public class JournalServiceImpl implements JournalService {
      *
      * IF(year) = 总引用次数 / 前两年发表文章数量
      *
-     * @param journal_title 需要查询的期刊标题
+     * @param journal_id 需要查询的期刊标题
      * @param year          需要查询的年份
      * @return 指定年份的期刊影响因子
      */
     @Override
-    public double getImpactFactor(String journal_title, int year) {
+    public double getImpactFactor(String journal_id, int year) {
         String sqlArticles = "SELECT a.id FROM Article a " +
                 "JOIN Article_Journal aj ON a.id = aj.article_id " +
                 "JOIN Journal j ON aj.journal_id = j.id " +
-                "WHERE j.title=? AND EXTRACT(YEAR FROM a.date_completed) IN (?, ?)";
+                "WHERE j.id=? AND EXTRACT(YEAR FROM a.date_completed)::int IN (?, ?)";
 
         String sqlCountArticles = "SELECT COUNT(*) AS total_articles FROM Article a " +
                 "JOIN Article_Journal aj ON a.id = aj.article_id " +
                 "JOIN Journal j ON aj.journal_id = j.id " +
-                "WHERE j.title = ? AND EXTRACT(YEAR FROM a.date_completed) IN (?, ?)";
+                "WHERE j.id = ? AND EXTRACT(YEAR FROM a.date_completed)::int IN (?, ?)";
 
         double impactFactor = 0.0;
         int totalCitations = 0;
@@ -57,7 +57,7 @@ public class JournalServiceImpl implements JournalService {
         try (Connection conn = dataSource.getConnection()) {
             // 获取前两年发表的文章ID
             PreparedStatement stmtArticles = conn.prepareStatement(sqlArticles);
-            stmtArticles.setString(1, journal_title);
+            stmtArticles.setString(1, journal_id);
             stmtArticles.setInt(2, year - 2);
             stmtArticles.setInt(3, year - 1);
             ResultSet rsArticles = stmtArticles.executeQuery();
@@ -70,7 +70,7 @@ public class JournalServiceImpl implements JournalService {
 
             // 获取前两年发表的文章数量
             PreparedStatement stmtCount = conn.prepareStatement(sqlCountArticles);
-            stmtCount.setString(1, journal_title);
+            stmtCount.setString(1, journal_id);
             stmtCount.setInt(2, year - 2);
             stmtCount.setInt(3, year - 1);
             ResultSet rsCount = stmtCount.executeQuery();
@@ -110,12 +110,23 @@ public class JournalServiceImpl implements JournalService {
                 "  AND article_id IN ( " +
                 "      SELECT a.id " +
                 "      FROM Article a " +
-                "      WHERE EXTRACT(YEAR FROM a.date_completed) >= ? " +
+                "      WHERE EXTRACT(YEAR FROM a.date_completed)::int >= ? " +
                 "  )";
+        String deleteInsertedJournal = "DELETE FROM Journal WHERE id = ?"; // 删除插入的期刊
+        String revertArticleJournal = "UPDATE Article_Journal " +
+                "SET journal_id = ? " +
+                "WHERE journal_id = ? " +
+                "  AND article_id IN ( " +
+                "      SELECT a.id " +
+                "      FROM Article a " +
+                "      WHERE EXTRACT(YEAR FROM a.date_completed)::int >= ? " +
+                "  )";  // 恢复原来的 journal_id
 
         Connection conn = null;
         PreparedStatement stmtInsert = null;
         PreparedStatement stmtUpdate = null;
+        PreparedStatement stmtDelete = null;
+        PreparedStatement stmtRevert = null;
         try {
             conn = dataSource.getConnection();
             conn.setAutoCommit(false); // 开始事务
@@ -133,11 +144,28 @@ public class JournalServiceImpl implements JournalService {
             stmtUpdate.setInt(3, year);                // AND EXTRACT(YEAR FROM a.date_completed) >= ?
             int rowsUpdated = stmtUpdate.executeUpdate();
 
-            conn.commit(); // 提交事务
+            // 记录更新结果
+            boolean updateSuccess = rowsUpdated > 0;
 
-            log.info("Updated journal name from {} to {} for {} articles starting from year {}",
+            // 恢复原来的 journal_id
+            stmtRevert = conn.prepareStatement(revertArticleJournal);
+            stmtRevert.setString(1, journal.getId());  // 恢复为原来的 journal_id
+            stmtRevert.setString(2, new_id);           // 旧的 journal_id 是新插入的期刊
+            stmtRevert.setInt(3, year);                // 年份保持不变
+            stmtRevert.executeUpdate();
+
+            // 删除插入的期刊
+            stmtDelete = conn.prepareStatement(deleteInsertedJournal);
+            stmtDelete.setString(1, new_id);  // 使用新插入的 journal_id 删除
+            stmtDelete.executeUpdate();
+
+            // 提交事务
+            conn.commit();
+
+            log.info("Updated journal name from {} to {} for {} articles starting from year {} and deleted the inserted journal",
                     journal.getTitle(), new_name, rowsUpdated, year);
-            return rowsUpdated>0;
+
+            return updateSuccess; // 返回是否成功更新
         } catch (SQLException e) {
             log.error("Error updating journal name for journal: {} starting from year: {}",
                     journal.getTitle(), year, e);
@@ -148,23 +176,14 @@ public class JournalServiceImpl implements JournalService {
                     log.error("Error rolling back transaction", rollbackEx);
                 }
             }
-            return false;
+            return false; // 如果发生异常，返回 false
         } finally {
             // 关闭资源
-            if (stmtUpdate != null) {
-                try {
-                    stmtUpdate.close();
-                } catch (SQLException e) {
-                    log.error("Error closing stmtUpdate", e);
-                }
-            }
-            if (stmtInsert != null) {
-                try {
-                    stmtInsert.close();
-                } catch (SQLException e) {
-                    log.error("Error closing stmtInsert", e);
-                }
-            }
+            closeStatement(stmtInsert);
+            closeStatement(stmtUpdate);
+            closeStatement(stmtDelete);
+            closeStatement(stmtRevert);
+
             if (conn != null) {
                 try {
                     conn.setAutoCommit(true); // 恢复自动提交
@@ -175,4 +194,16 @@ public class JournalServiceImpl implements JournalService {
             }
         }
     }
+
+    private void closeStatement(PreparedStatement stmt) {
+        if (stmt != null) {
+            try {
+                stmt.close();
+            } catch (SQLException e) {
+                log.error("Error closing PreparedStatement", e);
+            }
+        }
+    }
+
+
 }
