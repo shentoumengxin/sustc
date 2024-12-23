@@ -30,9 +30,9 @@ public class CitationCountManager {
     @Async
     public void initializeTempTableAsync() {
         if (initialized.compareAndSet(false, true)) {
-            try (Connection connection = dataSource.getConnection();
-                 Statement stmt = connection.createStatement()) {
-
+            try {
+                connection = dataSource.getConnection();
+                Statement stmt = connection.createStatement();
                 // 创建临时表
                 String createTempTableSQL = "CREATE  TABLE IF NOT EXISTS Article_Citation_Count (" +
                         "article_id INT, " +
@@ -41,7 +41,9 @@ public class CitationCountManager {
                         "PRIMARY KEY(article_id, citation_year));";
                 stmt.execute(createTempTableSQL);
                 log.info("创建临时表 Article_Citation_Count 完成。");
-
+                String truncate="truncate table Article_citation_count";
+                stmt.execute(truncate);
+                log.info("被引用表清空完成");
                 // 初始化引用计数
                 String initCitationCountSQL = "INSERT INTO Article_Citation_Count (article_id, citation_count, citation_year) " +
                         "SELECT ar.reference_id AS article_id, " +
