@@ -52,7 +52,7 @@ public class ArticleServiceImpl implements ArticleService {
     public double addArticleAndUpdateIF(Article article) {
         try {
             Calendar calendar = Calendar.getInstance();
-            calendar.setTime(article.getCompleted());
+            calendar.setTime(article.getCreated());
             int year = calendar.get(Calendar.YEAR);
             insertArticleAndJournal(article);
             if (article.getReferences() != null) {
@@ -64,12 +64,12 @@ public class ArticleServiceImpl implements ArticleService {
             String sqlArticles = "SELECT a.id FROM Article a " +
                     "JOIN Article_Journal aj ON a.id = aj.article_id " +
                     "JOIN Journal j ON aj.journal_id = j.id " +
-                    "WHERE j.title = ? AND EXTRACT(YEAR FROM a.date_completed)::int  IN (?, ?)";
+                    "WHERE j.title = ? AND EXTRACT(YEAR FROM a.date_created)::int  IN (?, ?)";
 
             String sqlCountArticles = "SELECT COUNT(*) AS total_articles FROM Article a " +
                     "JOIN Article_Journal aj ON a.id = aj.article_id " +
                     "JOIN Journal j ON aj.journal_id = j.id " +
-                    "WHERE j.title = ? AND EXTRACT(YEAR FROM a.date_completed)::int IN (?, ?)";
+                    "WHERE j.title = ? AND EXTRACT(YEAR FROM a.date_created)::int IN (?, ?)";
 
             double impactFactor = 0.0;
             int totalCitations = 0;
@@ -80,20 +80,20 @@ public class ArticleServiceImpl implements ArticleService {
             Journal journal = article.getJournal();
             PreparedStatement stmtArticles = conn.prepareStatement(sqlArticles);
             stmtArticles.setString(1, journal.getTitle());
-            stmtArticles.setInt(2, year - 2);
-            stmtArticles.setInt(3, year - 1);
+            stmtArticles.setInt(2, year-1 );
+            stmtArticles.setInt(3, year );
             ResultSet rsArticles = stmtArticles.executeQuery();
 
             while (rsArticles.next()) {
                 int articleId = rsArticles.getInt("id");
                 // 使用 CitationCountManager 获取引用次数
-                totalCitations += citationCountManager.getCitationsInYear(articleId, year);
+                totalCitations += citationCountManager.getCitationsInYear(articleId, year+1);
             }
 
             // 获取前两年发表的文章数量
             PreparedStatement stmtCount = conn.prepareStatement(sqlCountArticles);
             stmtCount.setString(1, journal.getTitle());
-            stmtCount.setInt(2, year - 2);
+            stmtCount.setInt(2, year );
             stmtCount.setInt(3, year - 1);
             ResultSet rsCount = stmtCount.executeQuery();
             if (rsCount.next()) {
@@ -102,7 +102,10 @@ public class ArticleServiceImpl implements ArticleService {
 
             // 计算影响因子
             if (totalArticles != 0) {
-                impactFactor = (double) totalCitations / totalArticles;
+                impactFactor = (double) totalCitations / (totalArticles);
+//               // log.info("Total Citations: {}", totalCitations);
+//                //log.info("Total Articles: {}", totalArticles);
+
             } else {
                 log.warn("前两年发表文章数量为零，无法计算影响因子。");
             }
