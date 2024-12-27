@@ -6,6 +6,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.sql.DataSource;
 import java.sql.*;
 
@@ -15,6 +17,47 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private DataSource dataSource;
+    // 创建表的SQL语句
+    private static final String CREATE_TABLE_SQL =
+            "CREATE TABLE IF NOT EXISTS public.users " +
+                    "( " +
+                    "id SERIAL PRIMARY KEY, " +  // 用户ID，自增
+                    "username VARCHAR(50) NOT NULL UNIQUE, " +  // 用户名，唯一，不能为空
+                    "password VARCHAR(255) NOT NULL, " +  // 密码，不能为空
+                    "role VARCHAR(20) NOT NULL CHECK (" +
+                    "role IN ('Site Admin', 'Journal Admin', 'Article Admin', 'Reader')), " +  // 限制角色字段为四个值
+                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +  // 记录用户创建时间
+                    "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +  // 记录用户更新时间
+                    "CONSTRAINT users_role_check1 CHECK (role IN ('Site Admin', 'Journal Admin', 'Article Admin', 'Reader')) " +  // 强制角色约束
+                    ");";
+
+    // 删除表的SQL语句
+    private static final String DROP_TABLE_SQL = "DROP TABLE IF EXISTS public.users;";
+
+    @PostConstruct
+    public void init() {
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement()) {
+            // 执行创建表的SQL
+            stmt.executeUpdate(CREATE_TABLE_SQL);
+            log.info("Users table created successfully.");
+        } catch (SQLException e) {
+            log.error("Error creating users table.", e);
+            throw new RuntimeException("Error creating users table", e);
+        }
+    }
+
+    @PreDestroy
+    public void cleanup() {
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement()) {
+            // 执行删除表的SQL
+            stmt.executeUpdate(DROP_TABLE_SQL);
+            log.info("Users table dropped successfully.");
+        } catch (SQLException e) {
+            log.error("Error dropping users table.", e);
+        }
+    }
 
     /**
      * 用户注册
