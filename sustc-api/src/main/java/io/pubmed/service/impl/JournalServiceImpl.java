@@ -43,12 +43,12 @@ public class JournalServiceImpl implements JournalService {
         String sqlArticles = "SELECT a.id FROM Article a " +
                 "JOIN Article_Journal aj ON a.id = aj.article_id " +
                 "JOIN Journal j ON aj.journal_id = j.id " +
-                "WHERE j.id=? AND EXTRACT(YEAR FROM a.date_completed)::int IN (?, ?)";
+                "WHERE j.id=? AND EXTRACT(YEAR FROM a.date_created)::int IN (?, ?)";
 
         String sqlCountArticles = "SELECT COUNT(*) AS total_articles FROM Article a " +
                 "JOIN Article_Journal aj ON a.id = aj.article_id " +
                 "JOIN Journal j ON aj.journal_id = j.id " +
-                "WHERE j.id = ? AND EXTRACT(YEAR FROM a.date_completed)::int IN (?, ?)";
+                "WHERE j.id = ? AND EXTRACT(YEAR FROM a.date_created)::int IN (?, ?)";
 
         double impactFactor = 0.0;
         int totalCitations = 0;
@@ -71,7 +71,7 @@ public class JournalServiceImpl implements JournalService {
             // 获取前两年发表的文章数量
             PreparedStatement stmtCount = conn.prepareStatement(sqlCountArticles);
             stmtCount.setString(1, journal_id);
-            stmtCount.setInt(2, year - 2);
+            stmtCount.setInt(2, year -2);
             stmtCount.setInt(3, year - 1);
             ResultSet rsCount = stmtCount.executeQuery();
             if (rsCount.next()) {

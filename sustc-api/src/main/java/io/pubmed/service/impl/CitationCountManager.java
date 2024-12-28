@@ -27,23 +27,27 @@ public class CitationCountManager {
     /**
      * 异步初始化临时表
      */
-    @Async
     public void initializeTempTableAsync() {
         if (initialized.compareAndSet(false, true)) {
+            Statement stmt = null;
             try {
-                connection = dataSource.getConnection();
-                Statement stmt = connection.createStatement();
+                connection = dataSource.getConnection(); // 获取连接
+                stmt = connection.createStatement();
+
                 // 创建临时表
-                String createTempTableSQL = "CREATE  TABLE IF NOT EXISTS Article_Citation_Count (" +
+                String createTempTableSQL = "CREATE TABLE IF NOT EXISTS Article_Citation_Count (" +
                         "article_id INT, " +
                         "citation_count INT NOT NULL DEFAULT 0, " +
                         "citation_year INT NOT NULL, " +
                         "PRIMARY KEY(article_id, citation_year));";
                 stmt.execute(createTempTableSQL);
                 log.info("创建临时表 Article_Citation_Count 完成。");
-                String truncate="truncate table Article_citation_count";
+
+                // 清空表
+                String truncate = "TRUNCATE TABLE Article_Citation_Count";
                 stmt.execute(truncate);
                 log.info("被引用表清空完成");
+
                 // 初始化引用计数
                 String initCitationCountSQL = "INSERT INTO Article_Citation_Count (article_id, citation_count, citation_year) " +
                         "SELECT ar.reference_id AS article_id, " +
@@ -52,7 +56,6 @@ public class CitationCountManager {
                         "FROM article_references ar " +
                         "JOIN Article a ON ar.article_id = a.id " +
                         "GROUP BY (ar.reference_id, EXTRACT(YEAR FROM a.date_created)::int);";
-
                 stmt.execute(initCitationCountSQL);
                 log.info("初始化临时表中的引用计数完成。");
 
@@ -116,7 +119,7 @@ public class CitationCountManager {
             return;
         }
         String sql = "UPDATE Article_Citation_Count SET citation_count = citation_count + ? WHERE article_id = ? and citation_year=?";
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (PreparedStatement stmt =connection.prepareStatement(sql)) {
             stmt.setInt(1, increment);
             stmt.setInt(2, articleId);
             stmt.setInt(3, year);
