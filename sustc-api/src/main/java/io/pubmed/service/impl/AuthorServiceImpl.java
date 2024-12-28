@@ -136,7 +136,11 @@ public class AuthorServiceImpl implements AuthorService {
 
                 // Step 4: Check if current article is written by author E
                 if (isArticleWrittenByAuthor(currentArticleId, E)) {
-                    return currentDepth; // Found, return the number of articles (depth)
+                    if (currentDepth!=0) {
+                        return currentDepth; // Found, return the number of articles (depth)
+                    }else{
+                        return 1;
+                    }
                 }
 
                 // Step 5: Get references of the current article

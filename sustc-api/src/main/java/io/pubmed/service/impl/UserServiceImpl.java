@@ -25,7 +25,6 @@ public class UserServiceImpl implements UserService {
     public User registerUser(User user) {
         String checkUserSql = "SELECT COUNT(*) FROM users WHERE username = ?";
         int userCount = 0;
-
         // 检查用户名是否已存在
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(checkUserSql)) {
@@ -34,11 +33,13 @@ public class UserServiceImpl implements UserService {
             if (rs.next()) {
                 userCount = rs.getInt(1);
             }
+            if (user.getRole() == null || user.getRole().isEmpty()) {
+                user.setRole("READER");
+            }
         } catch (SQLException e) {
             log.error("Error checking if username exists: {}", user.getUsername(), e);
             throw new RuntimeException("Error checking username availability", e);
         }
-
         if (userCount > 0) {
             throw new RuntimeException("Username already exists!");
         }
@@ -98,6 +99,7 @@ public class UserServiceImpl implements UserService {
         return user;
     }
 
+
     /**
      * 登录
      * @param username 用户名
@@ -107,8 +109,6 @@ public class UserServiceImpl implements UserService {
     @Override
     public boolean login(String username, String password) {
         String sql = "SELECT password FROM users WHERE username = ?";
-        boolean isValid = false;
-
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
@@ -117,14 +117,16 @@ public class UserServiceImpl implements UserService {
 
             if (rs.next()) {
                 String storedPassword = rs.getString("password");
-                isValid = password.equals(storedPassword);  // 直接比较明文密码
+                return password.equals(storedPassword); // 简单密码比较
+            } else {
+                log.warn("Login failed: user not found - {}", username);
+                return false; // 用户名不存在
             }
 
         } catch (SQLException e) {
-            log.error("Error querying user password for login: {}", username, e);
+            log.error("Database error during login for user: {}", username, e);
+            throw new RuntimeException("Database error during login", e);
         }
-
-        return isValid;
     }
 
     /**

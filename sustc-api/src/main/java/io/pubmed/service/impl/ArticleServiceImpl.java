@@ -28,7 +28,7 @@ public class ArticleServiceImpl implements ArticleService {
     public int getArticleCitationsByYear(int id, int year) {
         String sql = "SELECT COUNT(*) FROM article_references ar " +
                 "JOIN article a ON ar.article_id = a.id " +
-                "WHERE ar.reference_id = ? AND EXTRACT(YEAR FROM a.date_created) = ?";
+                "WHERE ar.reference_id = ? AND EXTRACT(YEAR FROM a.date_completed) = ?";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
@@ -108,13 +108,10 @@ public class ArticleServiceImpl implements ArticleService {
             }
             deleteArticleAndAssociatedData(article);
             return impactFactor;
-
         } catch (SQLException e) {
-            System.out.println(article);
             throw new RuntimeException(e);
         }
     }
-
     //自己实现的代码
     private void insertArticleAndJournal(Article article) throws SQLException {
         // Step 1: Insert the article into the Article table

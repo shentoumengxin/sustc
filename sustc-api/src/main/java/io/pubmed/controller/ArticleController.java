@@ -3,6 +3,8 @@ package io.pubmed.controller;
 import io.pubmed.dto.Article;
 import io.pubmed.service.ArticleService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,8 +19,10 @@ public class ArticleController {
      * @return 文章在指定年份的引用次数
      */
     @GetMapping("/{id}/citations")
-    public int getArticleCitationsByYear(@PathVariable int id, @RequestParam int year) {
-        return articleService.getArticleCitationsByYear(id, year);
+    @PreAuthorize("hasAuthority('SITE_ADMIN') or hasAuthority('READER') or hasAuthority('ARTICLE_ADMIN') or hasAuthority('JOURNAL_ADMIN')")
+    public ResponseEntity<Integer> getArticleCitationsByYear(@PathVariable int id, @RequestParam int year) {
+        int citations = articleService.getArticleCitationsByYear(id, year);
+        return ResponseEntity.ok(citations);
     }
 
     /**
@@ -27,6 +31,7 @@ public class ArticleController {
      * @return 更新后的期刊影响因子
      */
     @PostMapping("/add")
+    @PreAuthorize("hasAuthority('SITE_ADMIN') or hasAuthority('READER') or hasAuthority('ARTICLE_ADMIN') or hasAuthority('JOURNAL_ADMIN')")
     public double addArticleAndUpdateIF(@RequestBody Article article) {
         return articleService.addArticleAndUpdateIF(article);
     }

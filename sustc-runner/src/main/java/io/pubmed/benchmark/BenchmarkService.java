@@ -94,7 +94,7 @@ public class BenchmarkService {
                 if (it.getValue() == res) {
                     pass.incrementAndGet();
                 } else {
-                    log.debug("Wrong answer for {}: expected {}, got {}", it.getKey(), it.getValue(), res);
+                    log.info("Wrong answer for {}: expected {}, got {}", it.getKey(), it.getValue(), res);
                 }
             } catch (Exception e) {
                 log.error("Exception thrown for {}", it, e);

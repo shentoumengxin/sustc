@@ -31,7 +31,6 @@ tasks.withType<JavaExec> {
 tasks.register("benchmark") {
     group = "application"
     description = "Run the benchmark script"
-
     tasks.getByName<BootRun>("bootRun")
         .apply { args("--spring.profiles.active=benchmark") }
         .let { finalizedBy(it) }

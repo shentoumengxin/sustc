@@ -17,6 +17,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.postgresql:postgresql")  // 用于连接 PostgreSQL 数据库
+    implementation ("org.springframework.boot:spring-boot-starter-security")
+    implementation("io.jsonwebtoken:jjwt-api:0.11.5")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.5")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.5") // 如果使用 JSON 序列化
     compileOnly ("org.projectlombok:lombok:1.18.24")  // Lombok 依赖
     annotationProcessor ("org.projectlombok:lombok:1.18.24")  // Lombok 注解处理器
 }

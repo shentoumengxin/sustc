@@ -1,8 +1,11 @@
 package io.pubmed.controller;
 
+import io.pubmed.dto.JwtResponse;
 import io.pubmed.dto.User;
+import io.pubmed.security.JwtTokenProvider;
 import io.pubmed.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -13,6 +16,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider; // 注入 JwtTokenProvider
 
     @Autowired
     private UserService userService;
@@ -23,12 +28,30 @@ public class UserController {
      * @return 登录成功与否
      */
     @PostMapping("/login")
-    public boolean login(@RequestBody Map<String, String> loginRequest) {
+    public ResponseEntity<?> login(@RequestBody Map<String, String> loginRequest) {
         String username = loginRequest.get("username");
         String password = loginRequest.get("password");
 
-        // 调用 service 层验证登录
-        return userService.login(username, password);
+        if (username == null || password == null) {
+            return ResponseEntity.badRequest().body("Username or password is missing");
+        }
+
+        boolean isValid = userService.login(username, password);
+
+        if (isValid) {
+            User user = userService.findByUsername(username);
+            if (user == null) {
+                return ResponseEntity.status(401).body("User not found");
+            }
+
+            // 使用 JwtTokenProvider 生成 Token
+            String token = jwtTokenProvider.generateToken(username, user.getRole());
+
+            System.out.println("Generated JWT: " + token);
+            return ResponseEntity.ok(Map.of("token", token, "role", user.getRole()));
+        } else {
+            return ResponseEntity.status(401).body("Invalid credentials");
+        }
     }
 
     /**
@@ -37,17 +60,29 @@ public class UserController {
      * @return 注册后的用户对象
      */
     @PostMapping("/register")
-    public User registerUser(@RequestBody User user) {
-        return userService.registerUser(user);
+    public ResponseEntity<?> registerUser(@RequestBody User user) {
+        try {
+            // 不使用密码加密，直接保存
+            User savedUser = userService.registerUser(user);
+            return ResponseEntity.ok(savedUser);
+        } catch (Exception e) {
+            // 添加错误日志
+            System.err.println("Registration error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Internal server error: " + e.getMessage());
+        }
     }
 
     /**
      * 根据用户名获取用户信息
-     * @param username 用户名
-     * @return 用户对象
      */
     @GetMapping("/username/{username}")
-    public User getUserByUsername(@PathVariable String username) {
-        return userService.findByUsername(username);
+    public ResponseEntity<?> getUserByUsername(@PathVariable String username) {
+        User user = userService.findByUsername(username);
+        if (user != null) {
+            return ResponseEntity.ok(user);
+        } else {
+            return ResponseEntity.status(404).body("User not found");
+        }
     }
 }
